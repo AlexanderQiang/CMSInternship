@@ -1,0 +1,27 @@
+function [value] = Autocall_1_realtime(principal,strikeOut,r0,r1,sigma,price,start_time,end_time,num)
+
+[Tradedays_data,Observe] = GetTrade_Ob_Sum(start_time,end_time);
+dt=1/365;
+returns=zeros(num,1);
+for s=1:num
+ind=sigma.*sqrt(dt.*Tradedays_data(:,1)).*randn(size(Tradedays_data,1),1)...
+    +(r0 - 0.5 * sigma ^2) .* dt .* Tradedays_data(:,1);
+wt=cumsum(ind);
+St=exp(wt)*price;
+outObserve=St(Observe,1);
+strikeOutMonth = find(outObserve > strikeOut * price , 1);
+if isempty(strikeOutMonth)==false
+    returns(s)= principal * (1 + r1 * Tradedays_data(Observe(strikeOutMonth),2) ...
+            / 365) * exp(-r0 * Tradedays_data(Observe(strikeOutMonth),2)/ 365);
+        continue;
+else
+    returns(s)=principal * St(end) / price *exp(-r0*Tradedays_data(end,2)/ 365);
+end
+     
+
+end
+value=mean(returns);
+end
+
+
+
