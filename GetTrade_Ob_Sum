@@ -1,0 +1,59 @@
+function [Countdays,Observe]=GetTrade_Ob_Sum(issue_time,end_time)
+%计算给定时间段的交易日间隔 每月月底观察日 及 交易日天数累和
+%返回值第一列为交易日间隔 第二列为1 表示当日为每月观察日 第三列表示累计交易日天数
+datetime.setDefaultFormats('reset');
+issue_date=datetime(issue_time,'InputFormat','yyyy-MM-dd');
+%disp(issue_date);
+end_date=datetime(end_time,'InputFormat','yyyy-MM-dd');
+%disp(end_date);
+datelist=datestr((issue_date:1:end_date),"yyyy/mm/dd");
+%disp(datelist)
+Weekdays=zeros(length(datelist),1);
+Weekdays=weekday(datelist);
+endRows=find(ismember(datetime(issue_date:end_date).',unique(dateshift(datetime(issue_date:end_date).','end','month'))));
+observeDay=datelist(endRows(:),:);
+Tradedays='0123456789';
+weekdayindex=0;
+k=1;
+for i=1:1:length(datelist)
+    
+    if Weekdays(i)<=6 && Weekdays(i)>=2
+        Tradedays(k,:)=datelist(i,:);
+        weekdayindex(k)=Weekdays(i);
+        k=k+1;
+    end
+end
+countdays=ones(length(Tradedays),1);
+for s=1:1:length(Tradedays)
+    if weekdayindex(s)==2
+        countdays(s)=3;
+    end
+end
+countdays(1)=1;
+
+
+monthdays=weekday(observeDay);
+ObserveDay=observeDay;
+for s=1:(size(observeDay,1))
+        if monthdays(s)==1
+            ObserveDay(s,:)=datestr((datetime(datetime(observeDay(s,:))-2)),"yyyy/mm/dd");
+            
+        end
+        if monthdays(s)==7
+            ObserveDay(s,:)=datestr((datetime(datetime(observeDay(s,:))-1)),"yyyy/mm/dd");
+            
+        end
+end
+[~,O_b]=ismember(datetime(ObserveDay),datetime(Tradedays));
+
+
+d=zeros(size(countdays,1),1);
+
+for s=1:size(countdays,1)
+    d(s)=sum(countdays(1:s,1));
+end
+Countdays=[countdays,d];
+
+Observe=O_b;
+end
+
