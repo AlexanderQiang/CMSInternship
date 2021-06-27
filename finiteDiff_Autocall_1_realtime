@@ -1,0 +1,83 @@
+format short
+r=0.1;
+s0=100;
+principals=100;
+strikeOut=1.05;
+strikeIn=0.75;
+r0=0.048;
+r1=0.14;
+start_time='2019-5-19';
+end_time='2020-5-19';
+sigma=0.2;
+price=100;
+k1=2*r0/sigma^2;
+alpha=-0.5*(k1-1);
+beta=-alpha^2-2*r0/sigma^2;
+[data,Ob] = GetTrade_Ob_Sum(start_time,end_time);
+f0=0;
+T=data(end,2)/365;
+t=Ob/365;
+tau=sigma^2*(T-t)/2;
+tau_inv=flipud(tau);
+tau_1=[0;tau_inv;T*sigma^2/2];
+%dt=T*sigma^2/(2*M);
+delt=50000;
+dt_m=zeros(size(tau_inv,1),1);
+for s=1:size(tau_1)
+    dt_m((s-1)*delt+s)=tau_1(s);
+end
+dx=1/500;
+delx=100;
+dx_n=zeros(delx,1);
+for s=1:delx
+    dx_n(s)=(s-1)*dx;
+end
+
+for s=1:size(tau_1)-1
+    for k=1:delt
+        dt_m(k+(s-1)*delt+s)=tau_1(s)+k*(tau_1(s+1)-tau_1(s))/delt;
+    end
+end
+Uxian=zeros(size(dx_n,1),size(dt_m,1)+2);
+for s=1:size(dx_n)
+    Uxian(s,1)=h2(strikeOut*s0,alpha,-dx_n(s),principals,s0);
+end
+for s=2:size(tau_1)-1
+    Uxian(1,(s-1)*delt+s)=h1(T,strikeOut*s0,beta,principals,tau_1(s),r1,sigma);
+end
+for s=1:size(tau_1)-1
+    for k=1:delt
+        Uxian(1,k+(s-1)*delt+s)=(strikeOut*s0)^(-1)*exp(-beta*dt_m(k+(s-1)*delt+s))*principals*(strikeOut*s0/s0);
+    end
+end
+for s=1:size(tau_1)-1
+for t=(s-1)*delt+s+1:s*delt+s+1
+    r=((tau_1(s+1)-tau_1(s))/delt)/dx^(2);
+    for x=2:size(Uxian,1)-1
+    Uxian(x,t)=r*Uxian(x-1,t-1)+(1-2*r)*Uxian(x,t-1)+r*Uxian(x+1,t-1);
+    end
+end
+end
+
+for s=2:size(Uxian,1)-1
+    Uxian(s,end-1)=(strikeOut*s0)*exp((alpha)*dx_n(s)+beta*tau_1(end));
+    Uxian(s,end)=(strikeOut*s0)*exp(-dx_n(s));
+end
+
+
+function h1tau=h1(T,kout,beta,H,t_,r_,sigma)
+h1tau=kout^(-1)*exp(-beta*t_)*(P(H,T-2*t_/sigma^2,r_));
+end
+%h1tau
+function h2x=h2(kout,alpha,x,principals,s0)
+if kout*exp(x)>kout
+    h2x=kout^(-1)*exp(-alpha*x)*principals;
+else
+    h2x=kout^(-1)*exp(-alpha*x)*principals*(kout*exp(x)/s0);
+end
+end
+%h2(x)
+function Ptr=P(H,t,r_)
+ Ptr=H*(1+r_*t);
+end
+% 观察日收益
