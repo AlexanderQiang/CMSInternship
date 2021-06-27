@@ -1,0 +1,27 @@
+s0=100;
+r=0.048;
+q=0.01;
+k=0.3;
+v0=0.5;
+rho=0.7;
+theta=0.5;
+sigma=0.2;
+T=1;
+npath=100000;
+nstep=245;
+dt=1/nstep;
+t=linspace(0,T,T*nstep);
+Ch=[1,rho;rho,1];
+L=chol(Ch);
+S=s0*ones(nstep+1,npath);
+V=v0*ones(nstep+1,npath);
+for s=1:nstep
+    ZH=randn(2,npath);
+    Z=L*ZH;
+    ds=r*S(s,:)*dt+(sqrt(V(s,:)).*S(s,:)).*Z(1,:)*sqrt(dt);
+    S(s+1,:)=S(s,:)+ds;
+    dv=k*(theta-V(s,:))*dt+sigma*(sqrt(V(s,:))).*Z(2,:)*sqrt(dt);
+    V(s+1,:)=max(V(s,:)+dv,0);
+end
+S=[S,mean(S,2)];
+mean_s=mean(S,2);
