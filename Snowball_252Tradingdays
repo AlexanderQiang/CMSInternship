@@ -1,0 +1,50 @@
+import numpy as np
+np.random.seed(3)
+
+S0=100 #Initial price
+knockin=S0*0.75 #knockin price
+knockout=S0*1.05 #knockout price
+sigema=0.2 #volatility
+r=0.048 #risk-free rate
+R=0.14 #return rate
+T=252 #trading day
+month=12 #12 months per year
+Notion=100 #Notional Principal
+dt=1/T #delta t
+time=10000 #times
+
+
+
+def SnowballOptionPricing(S0,knockin,knockout,sigema,r,R,Notion,dt,T,times):
+    Wt=np.random.normal(0,1,(times,T)) 
+    BM=(r-0.5*sigema**2)*dt+sigema*np.sqrt(dt)*Wt #Brown Motion
+    wt=np.cumsum(BM,axis=1) 
+    S=S0*np.exp(wt)  #price
+    days=np.zeros(times)
+    days[:]=360
+    payoff=np.zeros(times)
+    for i in range(times):
+        k_in=False
+        k_out=False
+        if np.min(S[i,:])<knockin:
+            k_in=True
+        group_T=np.zeros(12)
+        for j in range(12):
+            group_T[j]=S[i,j*21+21-1]
+        for k in range(12):
+            if group_T[k]>knockout:
+                k_out=True
+                days[i]=(k+1)*30
+                break               #judgement
+        if k_out:
+            payoff[i]=(Notion+Notion*R*days[i]/365)*np.exp(-r*(k+1)/12)  #敲出
+        else:
+            if k_in:
+                payoff[i]=Notion*(S[i,251]/S0)*np.exp(-r)          #敲入未敲出
+            else:
+                payoff[i]=(Notion+R*Notion*days[i]/365)*np.exp(-r)  #未敲入未敲出
+    return payoff
+
+PayOff=np.mean(SnowballOptionPricing(S0,knockin,knockout,sigema,r,R,Notion,dt,T,time))
+
+print('PayOff: %f '  %(PayOff))
