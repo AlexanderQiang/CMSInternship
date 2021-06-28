@@ -11,7 +11,7 @@ T=252 #trading day
 month=12 #12 months per year
 Notion=100 #Notional Principal
 dt=1/T #delta t
-time=10000 #times
+time=1000000 #times
 
 
 
